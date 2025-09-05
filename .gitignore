@@ -1,5 +1,7 @@
 #custom
 .jpg
+.jpeg
+.avif
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
