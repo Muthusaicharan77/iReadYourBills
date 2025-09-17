@@ -2,12 +2,13 @@ import os
 import xml.etree.ElementTree as ET
 from PIL import Image
 from torch.utils.data import Dataset
-
+import torch
 class BillDataset(Dataset):
-    def __init__(self,images_folder, annotations_file, transform=None):
+    def __init__(self,images_folder, annotations_file, transform=None,resize=(512,512)):
         self.transform = transform
         self.images_folder = images_folder
         self.annotation_file = annotations_file
+        self.resize = resize
         self.label2id = {"shop": 1, "item": 2, "date_time": 3, "total": 4}
         tree = ET.parse(annotations_file)
         root = tree.getroot()
@@ -31,10 +32,31 @@ class BillDataset(Dataset):
     def __getitem__(self, idx):
         sample = self.samples[idx]
         image_path = os.path.join(self.images_folder, sample["name"])
-        image = Image.open(image_path)
+        image = Image.open(image_path).convert("RGB")
+        orig_w, orig_h = image.size
+
+        # Resize image
+        if self.resize is not None:
+            new_w, new_h = self.resize
+            sx, sy = new_w / orig_w, new_h / orig_h
+            image = image.resize((new_w, new_h))
+            scaled_boxes = []
+            for (xtl, ytl, xbr, ybr) in sample["boxes"]:
+                scaled_boxes.append([xtl * sx, ytl * sy, xbr * sx, ybr * sy])
+        else:
+            scaled_boxes = sample["boxes"]
+
+        # To tensors with correct dtypes
+        boxes = torch.tensor(scaled_boxes, dtype=torch.float32)
+        labels = torch.tensor(sample["labels"], dtype=torch.int64)
+
+        # Filter out any invalid (label 0) if present
+        valid = labels > 0
+        boxes = boxes[valid]
+        labels = labels[valid]
+
         if self.transform:
-            image = self.transform(image)
-        box = sample["boxes"]
-        label = sample["labels"]
-        return image, box, label
+            image = self.transform(image)  # e.g., ToTensor()
+
+        return image, boxes, labels
         
