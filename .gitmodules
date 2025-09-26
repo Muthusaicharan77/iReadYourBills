@@ -1,0 +1,3 @@
+[submodule "Document-Scanner"]
+	path = Document-Scanner
+	url = https://github.com/sangamprashant/Document-Scanner.git

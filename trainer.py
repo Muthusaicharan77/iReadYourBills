@@ -61,8 +61,8 @@ DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 # --- Data ---
 transform = transforms.ToTensor()  # resize handled in dataset; ToTensor keeps [0,1]
 train_dataset = BillDataset(
-    images_folder=r"C:\Users\muthu\.cache\kagglehub\datasets\trainingdatapro\ocr-receipts-text-detection\versions\1",
-    annotations_file=r"C:\Users\muthu\.cache\kagglehub\datasets\trainingdatapro\ocr-receipts-text-detection\versions\1\annotations.xml",
+    images_folder=r"C:\Users\muthu\Documents\bill_ocr\Dataset",
+    annotations_file=r"C:\Users\muthu\Documents\bill_ocr\Dataset\annotations.xml",
     transform=transform,
     resize=IMG_SIZE,
 )
@@ -100,11 +100,14 @@ for epoch in range(EPOCHS):
         for b, l in zip(boxes_list, labels_list):
             # Skip samples with 0 boxes (FasterRCNN expects at least one)
             if b.numel() == 0:
+                # print(b)
+                print("samples with 0 boxes?")
                 continue
             targets.append({
                 "boxes": b.to(DEVICE, dtype=torch.float32),
                 "labels": l.to(DEVICE, dtype=torch.int64),
             })
+        # print("images and targets", imgs,targets)
 
         # If all samples in this batch had no valid boxes, skip
         if len(targets) == 0:
